@@ -20,12 +20,16 @@ This is the Flutter frontend for the Personal Expense Tracker application.
 
 ## Project Structure
 
-- `lib/models` - Data models (User, Expense)
-- `lib/screens` - UI screens
-- `lib/services` - API services for authentication and expense management
-- `lib/widgets` - Reusable UI components
-- `lib/providers` - State management
-- `lib/utils` - Utility classes and helper functions
+- `lib/models/` - Data models (User, Expense)
+- `lib/data/` - Repository pattern implementation
+  - `lib/data/repository/` - Repository interfaces
+  - `lib/data/repository/api/` - connecting my repository to backend
+  - `lib/data/dto` - data transfer object for model
+- `lib/ui/screens/` - UI screens
+- `lib/ui/providers/` - State management using Provider
+- `lib/ui/widgets/` - Reusable UI components
+- `lib/ui/theme/` - App themes and styling
+- `lib/utils/` - Utility classes and helper functions
 
 ## Setup Instructions
 
