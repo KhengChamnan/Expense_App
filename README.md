@@ -255,8 +255,10 @@ Here are some screenshots of the application:
 ![Add Expense](screenshots/photo_2_2025-04-05_22-29-31.jpg)
 *Form for adding a new expense*
 
-[Edit Expense](screenshots/photo_1_2025-04-05_22-29-31.jpg)
+
+![Edit Expense](screenshots/photo_1_2025-04-05_22-29-31.jpg)
 *Form for Editing expense*
+
 
 ![Analytics](screenshots/photo_1_2025-04-05_22-24-27.jpg)
 *Monthly expense analytics*
