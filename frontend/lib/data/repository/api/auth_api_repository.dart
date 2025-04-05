@@ -12,7 +12,6 @@ class AuthApiRepository implements AuthRepository {
   final String _tokenKey = 'auth_token';
   final String _userKey = 'user_data';
   
-  // HTTP timeout duration
   final Duration _timeout = const Duration(seconds: 10);
 
   @override
@@ -33,7 +32,6 @@ class AuthApiRepository implements AuthRepository {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 201) {
-        // Save token and user data
         await _storage.write(key: _tokenKey, value: data['token']);
         await _storage.write(key: _userKey, value: jsonEncode(data['user']));
         return {
@@ -59,23 +57,27 @@ class AuthApiRepository implements AuthRepository {
 
   @override
   Future<Map<String, dynamic>> login(String identifier, String password, {bool isEmail = false}) async {
+    if (isEmail) {
+      return loginWithEmail(identifier, password);
+    }
+    
     try {
+      final Map<String, dynamic> payload = {
+        'username': identifier,
+        'password': password,
+      };
+      
       final response = await http.post(
         Uri.parse(ApiConstants.loginUrl),
         headers: {
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({
-          isEmail ? 'email' : 'username': identifier,
-          'password': password,
-          'isEmail': isEmail,
-        }),
+        body: jsonEncode(payload),
       ).timeout(_timeout);
 
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
-        // Save token and user data
         await _storage.write(key: _tokenKey, value: data['token']);
         await _storage.write(key: _userKey, value: jsonEncode(data['user']));
         return {
@@ -87,6 +89,50 @@ class AuthApiRepository implements AuthRepository {
         return {
           'success': false,
           'message': data['error'] ?? 'Login failed',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': e.toString().contains('timeout') 
+            ? 'Connection timeout. Check if the backend server is running.' 
+            : 'Network error: $e',
+      };
+    }
+  }
+
+  Future<Map<String, dynamic>> loginWithEmail(String email, String password) async {
+    try {
+      final String normalizedEmail = email.toLowerCase().trim();
+      
+      final Map<String, dynamic> payload = {
+        'email': normalizedEmail,
+        'password': password,
+        'isEmail': true
+      };
+      
+      final response = await http.post(
+        Uri.parse(ApiConstants.loginUrl),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(payload),
+      ).timeout(_timeout);
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        await _storage.write(key: _tokenKey, value: data['token']);
+        await _storage.write(key: _userKey, value: jsonEncode(data['user']));
+        return {
+          'success': true,
+          'message': data['message'],
+          'user': UserDTO.fromJson(data['user']),
+        };
+      } else {
+        return {
+          'success': false,
+          'message': data['error'] ?? 'Email login failed',
         };
       }
     } catch (e) {
@@ -147,7 +193,6 @@ class AuthApiRepository implements AuthRepository {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
-        // Update stored user data
         await _storage.write(key: _userKey, value: jsonEncode(data));
         return {
           'success': true,

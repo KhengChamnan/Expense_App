@@ -22,7 +22,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _refreshUserProfile() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      // Only refresh the profile silently without showing loading state
       authProvider.refreshUserProfileSilently();
       _isFirstLoad = false;
     });
@@ -47,18 +46,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           final user = authProvider.user;
 
-          // Return empty container while loading instead of showing spinner
           if (user == null) {
             return const SizedBox.shrink();
           }
 
           return CustomScrollView(
             slivers: [
-              // App Bar with profile header - without back and notification icons
               SliverAppBar(
                 expandedHeight: 250,
                 backgroundColor: Colors.deepOrange.shade300,
-                automaticallyImplyLeading: false, // Remove back button
+                automaticallyImplyLeading: false,
                 title: const Text('Profile'),
                 centerTitle: true,
                 titleSpacing: 0,
@@ -66,7 +63,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 pinned: true,
                 flexibleSpace: LayoutBuilder(
                   builder: (BuildContext context, BoxConstraints constraints) {
-                    // Calculate top padding based on constraints
                     double topPadding = constraints.maxHeight > 150 ? 85 : 0;
                     
                     return FlexibleSpaceBar(
@@ -76,7 +72,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            // Profile picture
                             Container(
                               width: 100,
                               height: 100,
@@ -102,7 +97,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             ),
                             const SizedBox(height: 10),
-                            // Username and email instead of Edit Profile button
                             Text(
                               user.username,
                               style: const TextStyle(
@@ -129,7 +123,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               
-              // Content below app bar
               SliverToBoxAdapter(
                 child: Container(
                   color: Colors.white,
@@ -138,7 +131,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       const Divider(height: 1),
                       
-                      // Account Settings
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                         child: Text(
@@ -151,7 +143,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                       
-                      // Email setting
                       ListTile(
                         leading: Icon(
                           Icons.email_outlined,
@@ -166,7 +157,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       
                       const Divider(height: 1, indent: 16, endIndent: 16),
                       
-                      // Username setting
                       ListTile(
                         leading: Icon(
                           Icons.person_outline,
@@ -181,7 +171,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       
                       const Divider(height: 1),
                       
-                      // Preferences section
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                         child: Text(
@@ -194,7 +183,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                       
-                      // Logout
                       ListTile(
                         leading: Icon(
                           Icons.logout,
@@ -202,7 +190,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         title: const Text('Logout'),
                         onTap: () async {
-                          // Navigate to login immediately to avoid any flashing
                           Navigator.of(context).pushAndRemoveUntil(
                             PageRouteBuilder(
                               pageBuilder: (_, __, ___) => const LoginScreen(),
@@ -212,7 +199,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             (route) => false,
                           );
                           
-                          // Then perform logout in the background
                           await authProvider.logout();
                         },
                       ),

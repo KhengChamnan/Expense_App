@@ -61,9 +61,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Register'),
-      ),
+      backgroundColor: Colors.white,
       body: Consumer<AuthProvider>(
         builder: (context, authProvider, _) {
           if (authProvider.error != null) {
@@ -88,10 +86,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Icon(
-                        Icons.account_balance_wallet,
-                        size: 80,
-                        color: Colors.blue,
+                      Center(
+                        child: Image.asset(
+                          'assets/favpng_budget-money-finance-student-clip-art.png',
+                          height: 180,
+                          width: 180,
+                        ),
                       ),
                       const SizedBox(height: 24),
                       const Text(
@@ -103,13 +103,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           color: Colors.blue,
                         ),
                       ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Please fill in your details to create an account',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey,
+                        ),
+                      ),
                       const SizedBox(height: 32),
                       TextFormField(
                         controller: _usernameController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: 'Username',
-                          prefixIcon: Icon(Icons.person),
-                          border: OutlineInputBorder(),
+                          hintText: 'Enter username',
+                          prefixIcon: const Icon(Icons.person),
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.blue, width: 1),
+                          ),
                         ),
                         validator: Validators.validateUsername,
                         textInputAction: TextInputAction.next,
@@ -117,10 +140,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _emailController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: 'Email',
-                          prefixIcon: Icon(Icons.email),
-                          border: OutlineInputBorder(),
+                          hintText: 'Enter email',
+                          prefixIcon: const Icon(Icons.email),
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.blue, width: 1),
+                          ),
                         ),
                         validator: Validators.validateEmail,
                         keyboardType: TextInputType.emailAddress,
@@ -131,8 +168,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         controller: _passwordController,
                         decoration: InputDecoration(
                           labelText: 'Password',
+                          hintText: 'Enter password',
                           prefixIcon: const Icon(Icons.lock),
-                          border: const OutlineInputBorder(),
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.blue, width: 1),
+                          ),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscurePassword
@@ -155,8 +206,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         controller: _confirmPasswordController,
                         decoration: InputDecoration(
                           labelText: 'Confirm Password',
+                          hintText: 'Confirm your password',
                           prefixIcon: const Icon(Icons.lock_outline),
-                          border: const OutlineInputBorder(),
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.blue, width: 1),
+                          ),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscureConfirmPassword
@@ -180,9 +245,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         onPressed: authProvider.isLoading ? null : _register,
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(12),
                           ),
+                          elevation: 0,
                         ),
                         child: authProvider.isLoading
                             ? const SpinKitThreeBounce(
@@ -191,15 +259,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               )
                             : const Text(
                                 'Register',
-                                style: TextStyle(fontSize: 16),
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                               ),
                       ),
-                      const SizedBox(height: 16),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        child: const Text('Already have an account? Login'),
+                      const SizedBox(height: 24),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text(
+                            "Already have an account? ",
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.pop(context);
+                            },
+                            child: const Text(
+                              "Login here!",
+                              style: TextStyle(
+                                color: Colors.blue,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

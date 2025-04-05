@@ -7,22 +7,18 @@ import '../providers/async_value.dart';
 class AuthProvider extends ChangeNotifier {
   final AuthRepository _repository;
   
-  // State management using AsyncValue
   AsyncValue<User?> _authState = AsyncValue.loading();
   String? _error;
   
-  // Constructor with dependency injection for testability
   AuthProvider({AuthRepository? repository}) 
       : _repository = repository ?? AuthApiRepository();
 
-  // Getters
   AsyncValue<User?> get authState => _authState;
   User? get user => _authState.data;
   bool get isLoading => _authState.state == AsyncValueState.loading;
   bool get isAuthenticated => _authState.data != null;
   String? get error => _error;
 
-  // Initialize auth state
   Future<void> initAuthState() async {
     _authState = AsyncValue.loading();
     _error = null;
@@ -44,7 +40,6 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Register
   Future<bool> register(String username, String email, String password) async {
     _authState = AsyncValue.loading();
     _error = null;
@@ -69,14 +64,18 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // Login
   Future<bool> login(String username, String password) async {
+    return loginWithIdentifier(username, password, isEmail: false);
+  }
+
+  Future<bool> loginWithIdentifier(String identifier, String password, {bool isEmail = false}) async {
     _authState = AsyncValue.loading();
     _error = null;
     notifyListeners();
 
     try {
-      final result = await _repository.login(username, password);
+      final result = await _repository.login(identifier, password, isEmail: isEmail);
+      
       if (result['success']) {
         _authState = AsyncValue.success(result['user']);
         return true;
@@ -94,12 +93,9 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // Logout
   Future<void> logout() async {
-    // Quiet logout without triggering UI loading state
     try {
       await _repository.logout();
-      // Only update state at the end
       _authState = AsyncValue.success(null);
       notifyListeners();
     } catch (e) {
@@ -108,7 +104,6 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // Get user profile
   Future<void> getUserProfile() async {
     final currentUser = _authState.data;
     if (currentUser == null) return;
@@ -133,7 +128,7 @@ class AuthProvider extends ChangeNotifier {
     }
   }
   
-  // Refresh user profile silently (without showing loading state)
+  // Refresh user profile without showing loading state
   Future<void> refreshUserProfileSilently() async {
     final currentUser = _authState.data;
     if (currentUser == null) return;
@@ -149,7 +144,6 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // Clear error
   void clearError() {
     _error = null;
     notifyListeners();

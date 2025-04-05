@@ -54,23 +54,30 @@ const register = async (req, res) => {
 const login = async (req, res) => {
   try {
     const { username, email, password, isEmail } = req.body;
-    const identifier = isEmail ? email : username;
     
-    // Validate input
-    if (!identifier || !password) {
-      return res.status(400).json({ error: 'Login identifier and password are required' });
+    // Validate input based on login type
+    if (isEmail === true) {
+      if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password are required' });
+      }
+    } else {
+      if (!username || !password) {
+        return res.status(400).json({ error: 'Username and password are required' });
+      }
     }
 
-    // Find user - based on email or username
+    // Find user based on login method
     let user;
-    if (isEmail) {
-      user = await User.findByEmail(identifier);
+    if (isEmail === true) {
+      user = await User.findByEmail(email);
+      if (!user) {
+        return res.status(401).json({ error: 'Invalid email or password' });
+      }
     } else {
-      user = await User.findByUsername(identifier);
-    }
-    
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      user = await User.findByUsername(username);
+      if (!user) {
+        return res.status(401).json({ error: 'Invalid username or password' });
+      }
     }
 
     // Validate password
