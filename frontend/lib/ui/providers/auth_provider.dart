@@ -96,16 +96,14 @@ class AuthProvider extends ChangeNotifier {
 
   // Logout
   Future<void> logout() async {
-    _authState = AsyncValue.loading();
-    notifyListeners();
-
+    // Quiet logout without triggering UI loading state
     try {
       await _repository.logout();
+      // Only update state at the end
       _authState = AsyncValue.success(null);
+      notifyListeners();
     } catch (e) {
       _error = 'Logout failed: $e';
-      _authState = AsyncValue.error(e);
-    } finally {
       notifyListeners();
     }
   }
@@ -132,6 +130,22 @@ class AuthProvider extends ChangeNotifier {
       _authState = AsyncValue.error(e);
     } finally {
       notifyListeners();
+    }
+  }
+  
+  // Refresh user profile silently (without showing loading state)
+  Future<void> refreshUserProfileSilently() async {
+    final currentUser = _authState.data;
+    if (currentUser == null) return;
+    
+    try {
+      final result = await _repository.getUserProfile();
+      if (result['success']) {
+        _authState = AsyncValue.success(result['user']);
+        notifyListeners();
+      }
+    } catch (e) {
+      // Silent failure - keep existing user data
     }
   }
 

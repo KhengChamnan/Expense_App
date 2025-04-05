@@ -90,69 +90,135 @@ class ExpenseProvider extends ChangeNotifier {
     }
   }
 
-  // Create a new expense
+  // Create a new expense with optimistic updates
   Future<bool> createExpense(Expense expense) async {
     _error = null;
+    
+    // Optimistically add the expense to the list
+    List<Expense> currentList = List<Expense>.from(_expenses.data ?? []);
+    // Create a temporary ID (negative to avoid conflicts with server IDs)
+    final tempExpense = expense.id == null 
+        ? expense.copyWith(id: -DateTime.now().millisecondsSinceEpoch) 
+        : expense;
+    currentList.add(tempExpense);
+    _expenses = AsyncValue.success(currentList);
     notifyListeners();
 
     try {
       final result = await _repository.createExpense(expense);
       if (result['success']) {
-        await loadExpenses(); // Reload the expenses list
+        // Load the updated list in the background without showing loading state
+        _refreshInBackground();
         return true;
       } else {
+        // Revert the optimistic update
+        currentList.remove(tempExpense);
+        _expenses = AsyncValue.success(currentList);
         _error = result['message'];
         notifyListeners();
         return false;
       }
     } catch (e) {
+      // Revert the optimistic update
+      currentList.remove(tempExpense);
+      _expenses = AsyncValue.success(currentList);
       _error = 'Failed to create expense: $e';
       notifyListeners();
       return false;
     }
   }
 
-  // Update an expense
+  // Update an expense with optimistic updates
   Future<bool> updateExpense(Expense expense) async {
     _error = null;
-    notifyListeners();
+    
+    // Keep a copy of the original list for rollback if needed
+    final originalList = List<Expense>.from(_expenses.data ?? []);
+    
+    // Optimistically update the expense in the list
+    List<Expense> currentList = List<Expense>.from(_expenses.data ?? []);
+    final index = currentList.indexWhere((e) => e.id == expense.id);
+    
+    if (index != -1) {
+      currentList[index] = expense;
+      _expenses = AsyncValue.success(currentList);
+      notifyListeners();
+    }
 
     try {
       final result = await _repository.updateExpense(expense);
       if (result['success']) {
-        await loadExpenses(); // Reload the expenses list
+        // Load the updated list in the background without showing loading state
+        _refreshInBackground();
         return true;
       } else {
+        // Revert the optimistic update
+        _expenses = AsyncValue.success(originalList);
         _error = result['message'];
         notifyListeners();
         return false;
       }
     } catch (e) {
+      // Revert the optimistic update
+      _expenses = AsyncValue.success(originalList);
       _error = 'Failed to update expense: $e';
       notifyListeners();
       return false;
     }
   }
 
-  // Delete an expense
+  // Delete an expense with optimistic updates
   Future<bool> deleteExpense(int id) async {
     _error = null;
+    
+    // Keep a copy of the expense and the original list for rollback if needed
+    final originalList = List<Expense>.from(_expenses.data ?? []);
+    
+    // Optimistically remove the expense from the list
+    List<Expense> currentList = List<Expense>.from(_expenses.data ?? []);
+    currentList.removeWhere((expense) => expense.id == id);
+    _expenses = AsyncValue.success(currentList);
     notifyListeners();
 
     try {
       final result = await _repository.deleteExpense(id);
       if (result['success']) {
-        await loadExpenses(); // Reload the expenses list
+        // No need to reload - we've already removed it from the UI
         return true;
       } else {
+        // Revert the optimistic update
+        _expenses = AsyncValue.success(originalList);
         _error = result['message'];
         notifyListeners();
         return false;
       }
     } catch (e) {
+      // Revert the optimistic update
+      _expenses = AsyncValue.success(originalList);
       _error = 'Failed to delete expense: $e';
       notifyListeners();
       return false;
+    }
+  }
+
+  // Refresh data in the background without showing loading state
+  Future<void> _refreshInBackground() async {
+    try {
+      // Get the current year and month from the first expense or use current date
+      int year = _expenses.data?.isNotEmpty == true 
+        ? DateTime.parse(_expenses.data!.first.date).year 
+        : DateTime.now().year;
+      int month = _expenses.data?.isNotEmpty == true 
+        ? DateTime.parse(_expenses.data!.first.date).month 
+        : DateTime.now().month;
+      
+      final result = await _repository.getExpensesByMonth(year, month);
+      if (result['success']) {
+        _expenses = AsyncValue.success(result['expenses']);
+        notifyListeners();
+      }
+    } catch (e) {
+      // Silent fail - we already have the optimistic update
     }
   }
 

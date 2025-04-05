@@ -6,7 +6,6 @@ import '../providers/auth_provider.dart';
 import '../providers/expense_provider.dart';
 import '../../widgets/expense_card.dart';
 import '../../utils/expense_categories.dart';
-import 'login_screen.dart';
 import 'add_expense_screen.dart';
 import 'profile_screen.dart';
 
@@ -20,6 +19,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedYear = DateTime.now().year;
   int _selectedMonth = DateTime.now().month;
+  int _currentIndex = 0;
 
   @override
   void initState() {
@@ -179,9 +179,66 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+  
+  // Group expenses by date
+  Map<String, List<dynamic>> _groupExpensesByDate(List<dynamic> expenses) {
+    final Map<String, List<dynamic>> grouped = {};
+    
+    for (var expense in expenses) {
+      final date = expense.date.split('T')[0]; // Get YYYY-MM-DD format
+      
+      if (!grouped.containsKey(date)) {
+        grouped[date] = [];
+      }
+      
+      grouped[date]!.add(expense);
+    }
+    
+    return grouped;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final List<Widget> _screens = [
+      _buildHomeScreen(),
+      const ProfileScreen(),
+    ];
+
+    return Scaffold(
+      body: _screens[_currentIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
+      ),
+      floatingActionButton: _currentIndex == 0 ? FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AddExpenseScreen(),
+            ),
+          ).then((_) => _refreshExpenses());
+        },
+        child: const Icon(Icons.add),
+      ) : null,
+    );
+  }
+  
+  Widget _buildHomeScreen() {
     return Consumer2<AuthProvider, ExpenseProvider>(
       builder: (context, authProvider, expenseProvider, _) {
         if (expenseProvider.error != null) {
@@ -233,33 +290,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             centerTitle: true,
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.person),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ProfileScreen(),
-                    ),
-                  );
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.logout),
-                onPressed: () async {
-                  await authProvider.logout();
-                  if (context.mounted) {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LoginScreen(),
-                      ),
-                    );
-                  }
-                },
-              ),
-            ],
           ),
           body: !hasExpenses
               ? Center(
@@ -301,8 +331,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       // Summary card
                       Card(
-                        margin: const EdgeInsets.all(16),
-                        elevation: 4,
+                        margin: const EdgeInsets.all(15),
+                        elevation: 2,
                         child: Padding(
                           padding: const EdgeInsets.all(16),
                           child: Column(
@@ -341,45 +371,98 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                       ),
-                      // Expense list
+                      
+                      // Expense list with date headers
                       Expanded(
-                        child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemCount: expensesList.length,
-                          itemBuilder: (context, index) {
-                            final expense = expensesList[index];
-                            return ExpenseCard(
-                              expense: expense,
-                              onEdit: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => AddExpenseScreen(
-                                      expense: expense,
-                                    ),
-                                  ),
-                                ).then((_) => _refreshExpenses());
-                              },
-                              onDelete: () => _confirmDelete(expense.id!),
-                            );
-                          },
-                        ),
+                        child: _buildExpenseListWithDateHeaders(expensesList),
                       ),
                     ],
                   ),
                 ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const AddExpenseScreen(),
-                ),
-              ).then((_) => _refreshExpenses());
-            },
-            child: const Icon(Icons.add),
-          ),
         );
+      },
+    );
+  }
+  
+  Widget _buildExpenseListWithDateHeaders(List<dynamic> expenses) {
+    // Group expenses by date
+    final groupedExpenses = _groupExpensesByDate(expenses);
+    
+    // Sort dates (keys) in descending order
+    final sortedDates = groupedExpenses.keys.toList()
+      ..sort((a, b) => b.compareTo(a));
+      
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 0), // Remove horizontal padding for slidable
+      itemCount: sortedDates.length * 2, // Double the count for headers and expense groups
+      itemBuilder: (context, index) {
+        // Determine if this is a header (even index) or expense list (odd index)
+        final isHeader = index % 2 == 0;
+        final dateIndex = index ~/ 2;
+        
+        if (isHeader) {
+          // This is a date header
+          final dateStr = sortedDates[dateIndex];
+          final dateObj = DateTime.parse(dateStr);
+          final formattedDate = DateFormat('EEEE, d MMM').format(dateObj);
+          final dailyTotal = groupedExpenses[dateStr]!
+              .fold(0.0, (sum, expense) => sum + expense.amount);
+          
+          return Container(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+            margin: const EdgeInsets.only(bottom: 8, top: 16),
+            decoration: const BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: Colors.grey, width: 0.5),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  formattedDate,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
+                  ),
+                ),
+                Text(
+                  NumberFormat.currency(locale: 'en_US', symbol: '\$').format(dailyTotal),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: dailyTotal > 0 ? Colors.green : Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+          );
+        } else {
+          // This is the list of expenses for a date
+          final dateStr = sortedDates[dateIndex];
+          final expensesForDate = groupedExpenses[dateStr]!;
+          
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: expensesForDate.map<Widget>((expense) {
+              return ExpenseCard(
+                expense: expense,
+                onEdit: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AddExpenseScreen(
+                        expense: expense,
+                      ),
+                    ),
+                  ).then((_) => _refreshExpenses());
+                },
+                onDelete: () => _confirmDelete(expense.id!),
+              );
+            }).toList(),
+          );
+        }
       },
     );
   }

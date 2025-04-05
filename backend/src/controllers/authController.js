@@ -53,23 +53,30 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
   try {
-    const { username, password } = req.body;
-
+    const { username, email, password, isEmail } = req.body;
+    const identifier = isEmail ? email : username;
+    
     // Validate input
-    if (!username || !password) {
-      return res.status(400).json({ error: 'Username and password are required' });
+    if (!identifier || !password) {
+      return res.status(400).json({ error: 'Login identifier and password are required' });
     }
 
-    // Find user
-    const user = await User.findByUsername(username);
+    // Find user - based on email or username
+    let user;
+    if (isEmail) {
+      user = await User.findByEmail(identifier);
+    } else {
+      user = await User.findByUsername(identifier);
+    }
+    
     if (!user) {
-      return res.status(401).json({ error: 'Invalid username or password' });
+      return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     // Validate password
     const isValidPassword = await User.validatePassword(user, password);
     if (!isValidPassword) {
-      return res.status(401).json({ error: 'Invalid username or password' });
+      return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     // Generate JWT

@@ -58,7 +58,7 @@ class AuthApiRepository implements AuthRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> login(String username, String password) async {
+  Future<Map<String, dynamic>> login(String identifier, String password, {bool isEmail = false}) async {
     try {
       final response = await http.post(
         Uri.parse(ApiConstants.loginUrl),
@@ -66,8 +66,9 @@ class AuthApiRepository implements AuthRepository {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          'username': username,
+          isEmail ? 'email' : 'username': identifier,
           'password': password,
+          'isEmail': isEmail,
         }),
       ).timeout(_timeout);
 

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import '../models/expense.dart';
 import '../utils/expense_categories.dart';
 
@@ -18,87 +18,83 @@ class ExpenseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ExpenseCategory? category = ExpenseCategories.getCategoryByName(expense.category);
-    final dateFormat = DateFormat('MMM dd, yyyy');
-    final currencyFormat = NumberFormat.currency(locale: 'en_US', symbol: '\$');
+    
+    // Format amount with separate whole and decimal parts
+    final String amountStr = expense.amount.toString();
+    final List<String> parts = amountStr.contains('.')
+        ? amountStr.split('.')
+        : [amountStr, '00'];
+    final String wholeAmount = parts[0];
+    final String decimalAmount = parts[1].padRight(2, '0').substring(0, 2);
 
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: category?.color ?? Colors.grey,
-          child: Icon(
-            category?.icon ?? Icons.attach_money,
-            color: Colors.white,
+    return Slidable(
+      endActionPane: ActionPane(
+        motion: const ScrollMotion(),
+        children: [
+          SlidableAction(
+            onPressed: (_) => onDelete(),
+            backgroundColor: Colors.red,
+            foregroundColor: Colors.white,
+            icon: Icons.delete,
+            label: 'Delete',
           ),
-        ),
-        title: Row(
-          children: [
-            Text(
-              expense.category,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const Spacer(),
-            Text(
-              currencyFormat.format(expense.amount),
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.green,
+        ],
+      ),
+      child: InkWell(
+        onTap: onEdit,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            border: Border(
+              bottom: BorderSide(
+                color: Colors.grey.withOpacity(0.2),
+                width: 1,
               ),
             ),
-          ],
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Text(
-              'Date: ${dateFormat.format(DateTime.parse(expense.date))}',
-              style: const TextStyle(fontSize: 12),
+          ),
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            leading: CircleAvatar(
+              backgroundColor: category?.color ?? Colors.grey,
+              child: Icon(
+                category?.icon ?? Icons.attach_money,
+                color: Colors.white,
+              ),
             ),
-            if (expense.notes != null && expense.notes!.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  'Note: ${expense.notes}',
-                  style: const TextStyle(fontSize: 12),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+            title: Row(
+              children: [
+                Text(
+                  expense.category,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-              ),
-          ],
-        ),
-        trailing: PopupMenuButton(
-          icon: const Icon(Icons.more_vert),
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'edit',
-              child: Row(
-                children: [
-                  Icon(Icons.edit, size: 18),
-                  SizedBox(width: 8),
-                  Text('Edit'),
-                ],
-              ),
+                const Spacer(),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '$wholeAmount,$decimalAmount',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        color: Colors.green,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            const PopupMenuItem(
-              value: 'delete',
-              child: Row(
-                children: [
-                  Icon(Icons.delete, size: 18, color: Colors.red),
-                  SizedBox(width: 8),
-                  Text('Delete', style: TextStyle(color: Colors.red)),
-                ],
-              ),
-            ),
-          ],
-          onSelected: (value) {
-            if (value == 'edit') {
-              onEdit();
-            } else if (value == 'delete') {
-              onDelete();
-            }
-          },
+            subtitle: expense.notes != null && expense.notes!.isNotEmpty
+              ? Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    'Note: ${expense.notes}',
+                    style: const TextStyle(fontSize: 12),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                )
+              : null,
+          ),
         ),
       ),
     );
